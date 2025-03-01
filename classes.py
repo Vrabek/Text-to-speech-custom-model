@@ -1,6 +1,6 @@
 
 
-class JsonHandler:
+class InitJsonData:
 
     def __init__(self, json_data: dict):
 
@@ -10,7 +10,6 @@ class JsonHandler:
             raise ValueError('Invalid JSON file structure. Required keys: id, filename, extension, transcript')
         
         self.json_data = json_data
-
 
     
     def has_sufficient_structure(self):
@@ -27,3 +26,24 @@ class JsonHandler:
     
     def get_transcript(self):
         return self.json_data['transcript']
+    
+    def get_id(self):
+        return self.json_data['id']
+
+    
+
+class AudioFile:
+
+    def __init__(self, json_data: InitJsonData):
+
+        self.json_data = json_data
+    
+    def get_audio_filename(self):
+        return self.json_data.get_full_filename()
+
+
+class AlignedJson(InitJsonData):
+
+    def __init__(self, json_data: dict):
+
+        pass
