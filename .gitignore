@@ -132,3 +132,13 @@ dmypy.json
 .env.*.local
 .envrc
 .envrc.local
+myvenv/pyvenv.cfg
+myvenv/Scripts/activate
+myvenv/Scripts/activate.bat
+myvenv/Scripts/Activate.ps1
+myvenv/Scripts/deactivate.bat
+myvenv/Scripts/pip.exe
+myvenv/Scripts/pip3.12.exe
+myvenv/Scripts/pip3.exe
+myvenv/Scripts/python.exe
+myvenv/Scripts/pythonw.exe
