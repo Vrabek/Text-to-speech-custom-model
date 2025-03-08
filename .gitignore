@@ -1,9 +1,10 @@
 results.json
 #Audio File folder
 jc-voicelines/
+wav_files/
 
 #Venv
-MySTTProjectVenv/
+myvenv/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

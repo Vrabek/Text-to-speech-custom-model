@@ -1,4 +1,8 @@
-
+import os
+import re
+import torchaudio
+from torch.utils.data import Dataset
+from pydub import AudioSegment
 
 class InitJsonData:
 
@@ -43,74 +47,104 @@ class InitJsonData:
             transcript = self.get_transcript()
             id = self.get_id()
 
-            #print(filename, full_filename, transcript, id)
-            foramted_json = {
+            formatted_json = {
                 'id': id,
                 'filename': full_filename,
-                'transcript': transcript
-                
+                'transcript': transcript               
             }
-            return foramted_json
-
-
+            return formatted_json
 
         return self.json_data
 
     
-
-class AudioFile:
-
-    def __init__(self, json_data: InitJsonData):
-
-        if not isinstance(json_data, InitJsonData):
-            raise ValueError('Invalid JSON data type. Expected InitJsonData, got {}'.format(type(json_data)))
-        elif json_data.has_sufficient_structure() is False:
-            raise ValueError('Invalid JSON file structure. Required keys: id, transcript_filename, audio_filename')
-
-        self.json_data = json_data
+class MP3toWAVConverter:
+    def __init__(self, filename: str, source_file_location: str):
+        self.location = source_file_location
+        self.filename = filename
     
-    def get_audio_filename(self):
-        return self.json_data.get_full_filename()
-
-
-class AlignedJson(InitJsonData):
-
-    def __init__(self, json_data: dict):
-
-        self.json_data = json_data
+    def file_exists(self):
+        path = os.path.join(self.location, self.filename)
+        if os.path.exists(path):
+            return True
     
-    def has_sufficient_structure(self):
+    def file_is_mp3(self):
+        if self.filename.endswith('.mp3'):
+            return True
         
-        required_keys = ['id', 'transcript_filename', 'audio_filename']
-
-        if not all(key in self.json_data for key in required_keys):
-            raise ValueError('Invalid JSON file structure. Required keys: id, transcript_filename, audio_filename')
-        
-        return True
+    def get_full_path(self):
+        return os.path.join(self.location, self.filename)
     
+    def create_wav_folder(self):
+        wav_folder_path = os.path.join('wav_files')
+        if not os.path.exists(wav_folder_path):
+            os.makedirs(wav_folder_path)
+        return wav_folder_path
+    
+    def convert_to_wav(self):
+        
+        wav_folder_path = self.create_wav_folder()
+
+        #self.filename_cleanup(self.location)
+
+        if self.file_exists() and self.file_is_mp3():
+            mp3_path = self.get_full_path()
+            wav_file = self.filename.replace('.mp3', '.wav') 
+            wav_path = os.path.join(wav_folder_path, wav_file)
+
+            self.create_wav_folder()
+
+            if not os.path.exists(wav_path):
+                audio = AudioSegment.from_mp3(mp3_path)
+                audio.export(wav_path, format="wav")
+
+                print("Conversion complete! WAV file saved as", wav_path)
+        else:
+            raise ValueError(f'{self.location}\{self.filename} File does not exist or is not an MP3 file')
+        
+    
+    @staticmethod
+    def filename_cleanup(path: str):
+        
+        for filename in os.listdir(path):
+            
+            name, ext = os.path.splitext(filename)
+
+            # If the name ends with multiple dots, clean them
+            cleaned_name = re.sub(r'\.+$', '', name)
+            # Reconstruct the filename
+            fixed_filename = f"{cleaned_name}.{ext.lstrip('.')}" if ext else cleaned_name
+            # Return the original filename if no changes were made
+            # return fixed_filename 
+            if fixed_filename != filename:
+                print(f'Renaming: {filename} to {fixed_filename}')
+                os.rename(os.path.join(path, filename), os.path.join(path, fixed_filename))
 
 class Runtime:
 
-    def __init__(self, json_list: list, audio_file: AudioFile=None):
+    def __init__(self, json_list: list):
 
         self.json_list = json_list
-        self.audio_file = audio_file
-
         self.temp_data = []
     
     def process_data(self):
 
         for json_data in self.json_list:
 
-            print(json_data)
-
             init_json = InitJsonData(json_data)
-            print(init_json)
 
             if init_json.has_sufficient_structure():
                 formated_json = InitJsonData(json_data).prepare_json_data()
                 self.temp_data.append(formated_json)
-                print(formated_json)
+                
+        print(self.temp_data)
 
 
-        
+    def convert_mp3_to_wav(self, location: str):
+        for json_data in self.temp_data:
+            filename = json_data['filename']
+            converter = MP3toWAVConverter(filename, location)
+            print('json_data:', json_data)
+            #clean the source data
+            converter.filename_cleanup(location)
+            #perform the conversion
+            converter.convert_to_wav()
